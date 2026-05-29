@@ -17,8 +17,13 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog'
 import { Loader, PageLoader } from '@/components/loader'
-import { emitItemsUpdate, subscribeToBroadcast, useSocket } from '@/contexts/socket-context'
-import { patchItemInCache } from '@/lib/items-cache'
+import { emitItemsUpdate } from '@/contexts/socket-context'
+import {
+  syncItemEnabled,
+  revalidateAllItemCaches,
+  subscribeItemsUpdates,
+  normalizeItemId,
+} from '@/lib/items-sync'
 import { Edit2, Trash2, Eye, EyeOff, Search, Package } from 'lucide-react'
 
 interface Item {
@@ -31,13 +36,13 @@ interface Item {
   createdAt: string
 }
 
-const fetcher = (url: string) => fetch(url).then(res => res.json())
+const fetcher = (url: string) =>
+  fetch(url, { cache: 'no-store' }).then((res) => res.json())
 
 export function ListSection() {
   const { data, isLoading, mutate } = useSWR<{ items: Item[] }>('/api/items?all=true', fetcher, {
     revalidateOnFocus: true,
   })
-  const { lastItemsUpdate } = useSocket()
   const [searchQuery, setSearchQuery] = useState('')
   const [editItem, setEditItem] = useState<Item | null>(null)
   const [isUpdating, setIsUpdating] = useState<string | null>(null)
@@ -49,29 +54,25 @@ export function ListSection() {
   })
 
   useEffect(() => {
-    const refresh = () => mutate()
+    const refresh = () => void mutate()
     window.addEventListener('items-update', refresh)
-    const unsub = subscribeToBroadcast((type) => {
-      if (type === 'items-update') refresh()
-    })
+    const unsub = subscribeItemsUpdates(refresh)
     return () => {
       window.removeEventListener('items-update', refresh)
       unsub()
     }
   }, [mutate])
 
-  useEffect(() => {
-    mutate()
-  }, [lastItemsUpdate, mutate])
+  const handleToggleEnabled = useCallback(async (item: Item, nextEnabled: boolean) => {
+    if (nextEnabled === item.isEnabled) return
 
-  const handleToggleEnabled = useCallback(async (item: Item) => {
-    const nextEnabled = !item.isEnabled
-    setIsUpdating(item._id)
+    const itemId = normalizeItemId(item._id)
+    setIsUpdating(itemId)
 
-    await patchItemInCache(mutate, item._id, { isEnabled: nextEnabled })
+    await syncItemEnabled(itemId, nextEnabled)
 
     try {
-      const res = await fetch(`/api/items/${item._id}`, {
+      const res = await fetch(`/api/items/${itemId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ isEnabled: nextEnabled }),
@@ -79,12 +80,12 @@ export function ListSection() {
 
       if (!res.ok) throw new Error('Failed to update item')
 
-      const { item: updated } = await res.json()
-      await patchItemInCache(mutate, item._id, updated)
       emitItemsUpdate()
+      await revalidateAllItemCaches()
+      await mutate()
       toast.success(`Item ${nextEnabled ? 'enabled' : 'disabled'}`)
     } catch {
-      await patchItemInCache(mutate, item._id, { isEnabled: item.isEnabled })
+      await syncItemEnabled(itemId, item.isEnabled)
       toast.error('Failed to update item')
     } finally {
       setIsUpdating(null)
@@ -120,9 +121,9 @@ export function ListSection() {
 
       if (!res.ok) throw new Error('Failed to update item')
 
-      const { item: updated } = await res.json()
-      await patchItemInCache(mutate, editItem._id, updated)
       emitItemsUpdate()
+      await revalidateAllItemCaches()
+      await mutate()
       toast.success('Item updated successfully')
       setEditItem(null)
     } catch {
@@ -224,8 +225,8 @@ export function ListSection() {
                   <div className="flex items-center gap-2">
                     <Switch
                       checked={item.isEnabled}
-                      onCheckedChange={() => handleToggleEnabled(item)}
-                      disabled={isUpdating === item._id}
+                      onCheckedChange={(checked) => handleToggleEnabled(item, checked)}
+                      disabled={isUpdating === normalizeItemId(item._id)}
                     />
                     <span className="text-sm text-muted-foreground flex items-center gap-1">
                       {item.isEnabled ? (
@@ -244,7 +245,7 @@ export function ListSection() {
                       variant="ghost"
                       size="icon"
                       onClick={() => handleEdit(item)}
-                      disabled={isUpdating === item._id}
+                      disabled={isUpdating === normalizeItemId(item._id)}
                     >
                       <Edit2 className="h-4 w-4" />
                     </Button>
@@ -253,9 +254,9 @@ export function ListSection() {
                       size="icon"
                       className="text-destructive hover:text-destructive"
                       onClick={() => handleDelete(item._id)}
-                      disabled={isUpdating === item._id}
+                      disabled={isUpdating === normalizeItemId(item._id)}
                     >
-                      {isUpdating === item._id ? (
+                      {isUpdating === normalizeItemId(item._id) ? (
                         <Loader size="sm" />
                       ) : (
                         <Trash2 className="h-4 w-4" />

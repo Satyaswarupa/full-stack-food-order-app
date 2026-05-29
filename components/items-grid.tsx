@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input'
 import { PageLoader } from '@/components/loader'
 import { ItemCard } from '@/components/item-card'
 import { Search, ShoppingBag } from 'lucide-react'
-import { subscribeToBroadcast, useSocket } from '@/contexts/socket-context'
+import { revalidateAllItemCaches, subscribeItemsUpdates } from '@/lib/items-sync'
 
 interface Item {
   _id: string
@@ -18,42 +18,44 @@ interface Item {
   isEnabled: boolean
 }
 
-const fetcher = (url: string) => fetch(url).then(res => res.json())
+const fetcher = (url: string) =>
+  fetch(url, { cache: 'no-store' }).then((res) => res.json())
 
 export function ItemsGrid() {
   const { data, isLoading, mutate } = useSWR<{ items: Item[] }>('/api/items', fetcher, {
     revalidateOnFocus: true,
+    refreshInterval: 4000,
+    dedupingInterval: 1000,
   })
-  const { lastItemsUpdate } = useSocket()
   const [searchQuery, setSearchQuery] = useState('')
 
   useEffect(() => {
-    const refresh = () => mutate()
+    const refresh = () => {
+      void revalidateAllItemCaches()
+      void mutate()
+    }
+
     window.addEventListener('items-update', refresh)
-    const unsub = subscribeToBroadcast((type) => {
-      if (type === 'items-update') refresh()
-    })
+    const unsubBroadcast = subscribeItemsUpdates(refresh)
+
     return () => {
       window.removeEventListener('items-update', refresh)
-      unsub()
+      unsubBroadcast()
     }
   }, [mutate])
-
-  useEffect(() => {
-    mutate()
-  }, [lastItemsUpdate, mutate])
 
   if (isLoading) return <PageLoader text="Loading menu..." />
 
   const items = data?.items || []
-  const filteredItems = items.filter(item =>
-    item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    item.description.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredItems = items.filter(
+    (item) =>
+      item.isEnabled !== false &&
+      (item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        item.description.toLowerCase().includes(searchQuery.toLowerCase()))
   )
 
   return (
     <div className="space-y-6">
-      {/* Search */}
       <div className="relative max-w-md">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input
@@ -64,7 +66,6 @@ export function ItemsGrid() {
         />
       </div>
 
-      {/* Items Grid */}
       {filteredItems.length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-16">
@@ -73,7 +74,7 @@ export function ItemsGrid() {
               {searchQuery ? 'No items found' : 'No items available'}
             </h3>
             <p className="text-muted-foreground text-center max-w-sm">
-              {searchQuery 
+              {searchQuery
                 ? 'Try a different search term or browse all items'
                 : 'Check back soon for delicious items!'}
             </p>

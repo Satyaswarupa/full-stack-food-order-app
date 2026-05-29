@@ -18,7 +18,14 @@ export async function GET(request: Request) {
     
     const items = await Item.find(query).sort({ createdAt: -1 })
     
-    return NextResponse.json({ items })
+    return NextResponse.json(
+      { items },
+      {
+        headers: {
+          'Cache-Control': 'no-store, max-age=0',
+        },
+      }
+    )
   } catch (error) {
     console.error('Get items error:', error)
     return NextResponse.json(

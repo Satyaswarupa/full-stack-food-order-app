@@ -1,7 +1,8 @@
 import type { KeyedMutator } from 'swr'
+import { normalizeItemId, syncItemEnabled } from '@/lib/items-sync'
 
 interface ItemRecord {
-  _id: string
+  _id: unknown
   isEnabled: boolean
   [key: string]: unknown
 }
@@ -11,13 +12,21 @@ export function patchItemInCache<T extends { items?: ItemRecord[] }>(
   itemId: string,
   patch: Partial<ItemRecord>
 ) {
+  const id = normalizeItemId(itemId)
+  const isEnabled =
+    typeof patch.isEnabled === 'boolean' ? patch.isEnabled : undefined
+
+  if (isEnabled !== undefined) {
+    return syncItemEnabled(id, isEnabled)
+  }
+
   return mutate(
     (current) => {
       if (!current?.items) return current
       return {
         ...current,
-        items: current.items.map((i) =>
-          i._id === itemId ? { ...i, ...patch } : i
+        items: current.items.map((item) =>
+          normalizeItemId(item._id) === id ? { ...item, ...patch } : item
         ),
       } as T
     },

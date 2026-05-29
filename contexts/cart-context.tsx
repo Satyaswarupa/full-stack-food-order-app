@@ -46,6 +46,29 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }
   }, [items, isLoaded])
 
+  // Remove disabled / deleted items from cart when menu changes
+  useEffect(() => {
+    if (!isLoaded) return
+
+    const pruneCart = async () => {
+      try {
+        const res = await fetch('/api/items', { cache: 'no-store' })
+        if (!res.ok) return
+        const { items: menuItems } = await res.json()
+        const enabledIds = new Set(
+          (menuItems as { _id: string }[]).map((i) => String(i._id))
+        )
+        setItems((prev) => prev.filter((i) => enabledIds.has(i.itemId)))
+      } catch {
+        // ignore
+      }
+    }
+
+    const onMenuChange = () => void pruneCart()
+    window.addEventListener('items-update', onMenuChange)
+    return () => window.removeEventListener('items-update', onMenuChange)
+  }, [isLoaded])
+
   const addItem = useCallback((item: Omit<CartItem, 'quantity'>) => {
     setItems(prev => {
       const existing = prev.find(i => i.itemId === item.itemId)
