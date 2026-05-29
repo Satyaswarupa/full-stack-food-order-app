@@ -9,6 +9,8 @@ import { Button } from '@/components/ui/button'
 import { PageLoader } from '@/components/loader'
 import { Package, Clock, MapPin, Phone, ArrowLeft, RefreshCw } from 'lucide-react'
 import { formatDistanceToNow, format } from 'date-fns'
+import { formatDistance as formatDeliveryDistance } from '@/lib/delivery'
+import { OrderTrackingMap } from '@/components/orders/order-tracking-map'
 
 interface OrderItem {
   itemId: string
@@ -22,11 +24,17 @@ interface Order {
   _id: string
   items: OrderItem[]
   total: number
+  deliveryFee?: number
+  distanceMeters?: number
   status: 'pending' | 'confirmed' | 'preparing' | 'ready' | 'delivered' | 'cancelled'
   deliveryAddress: {
     mobile: string
     fullAddress: string
+    lat?: number
+    lng?: number
   }
+  isDeliveryTracking?: boolean
+  courierLocation?: { lat: number; lng: number }
   createdAt: string
 }
 
@@ -43,7 +51,10 @@ const fetcher = (url: string) => fetch(url).then(res => res.json())
 
 export function OrdersView() {
   const { data, isLoading, mutate } = useSWR<{ orders: Order[] }>('/api/orders', fetcher, {
-    refreshInterval: 5000 // Poll every 5 seconds for real-time updates
+    refreshInterval: (latest) => {
+      const orders = latest?.orders ?? []
+      return orders.some((o) => o.isDeliveryTracking) ? 3000 : 5000
+    },
   })
 
   // Listen for order status updates
@@ -181,8 +192,31 @@ export function OrdersView() {
                       <MapPin className="h-4 w-4 mt-0.5" />
                       <span>{order.deliveryAddress.fullAddress}</span>
                     </div>
+                    {order.distanceMeters != null && (
+                      <p className="text-xs">
+                        {formatDeliveryDistance(order.distanceMeters)} from shop
+                        {order.deliveryFee != null && (
+                          <> · Delivery {order.deliveryFee === 0 ? 'free' : `₹${order.deliveryFee}`}</>
+                        )}
+                      </p>
+                    )}
                   </div>
                 </div>
+
+                {order.deliveryAddress.lat != null &&
+                  order.deliveryAddress.lng != null &&
+                  (order.isDeliveryTracking || order.courierLocation) &&
+                  order.status !== 'cancelled' &&
+                  order.status !== 'delivered' && (
+                    <OrderTrackingMap
+                      customerLocation={{
+                        lat: order.deliveryAddress.lat,
+                        lng: order.deliveryAddress.lng,
+                      }}
+                      courierLocation={order.courierLocation}
+                      isDeliveryTracking={order.isDeliveryTracking}
+                    />
+                  )}
               </CardContent>
             </Card>
           )

@@ -8,6 +8,8 @@ interface Address {
   label: string
   mobile: string
   fullAddress: string
+  lat?: number
+  lng?: number
   isDefault: boolean
 }
 

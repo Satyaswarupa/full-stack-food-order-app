@@ -12,6 +12,7 @@ import {
   List,
   Users,
   BarChart3,
+  Settings,
   LogOut,
   Menu,
   X,
@@ -25,6 +26,7 @@ const navItems = [
   { href: '/admin/items', icon: ShoppingBag, label: 'Add Items' },
   { href: '/admin/list', icon: List, label: 'Item List' },
   { href: '/admin/users', icon: Users, label: 'Users' },
+  { href: '/admin/settings', icon: Settings, label: 'Shop Location' },
 ]
 
 export function AdminSidebar() {

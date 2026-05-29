@@ -142,12 +142,12 @@ export function CartView() {
                   <span className="text-foreground">₹{total.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between text-sm mb-2">
-                  <span className="text-muted-foreground">Delivery Fee</span>
-                  <span className="text-foreground">₹2.99</span>
+                  <span className="text-muted-foreground">Delivery</span>
+                  <span className="text-foreground text-xs">At checkout (by distance)</span>
                 </div>
                 <div className="flex justify-between text-lg font-bold pt-2 border-t border-border mt-2">
-                  <span className="text-foreground">Total</span>
-                  <span className="text-primary">₹{(total + 2.99).toFixed(2)}</span>
+                  <span className="text-foreground">Subtotal</span>
+                  <span className="text-primary">₹{total.toFixed(2)}</span>
                 </div>
               </div>
             </CardContent>

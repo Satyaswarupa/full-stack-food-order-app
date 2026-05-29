@@ -15,9 +15,20 @@ export interface IOrder extends Document {
   items: IOrderItem[]
   total: number
   status: 'pending' | 'confirmed' | 'preparing' | 'ready' | 'delivered' | 'cancelled'
+  deliveryFee: number
+  distanceMeters: number
   deliveryAddress: {
     mobile: string
     fullAddress: string
+    lat: number
+    lng: number
+    label?: string
+  }
+  isDeliveryTracking?: boolean
+  courierLocation?: {
+    lat: number
+    lng: number
+    updatedAt: Date
   }
   createdAt: Date
   updatedAt: Date
@@ -37,6 +48,8 @@ const OrderSchema = new Schema<IOrder>({
   userEmail: { type: String, required: true },
   items: [OrderItemSchema],
   total: { type: Number, required: true },
+  deliveryFee: { type: Number, default: 0 },
+  distanceMeters: { type: Number, default: 0 },
   status: { 
     type: String, 
     enum: ['pending', 'confirmed', 'preparing', 'ready', 'delivered', 'cancelled'],
@@ -44,8 +57,17 @@ const OrderSchema = new Schema<IOrder>({
   },
   deliveryAddress: {
     mobile: { type: String, required: true },
-    fullAddress: { type: String, required: true }
-  }
+    fullAddress: { type: String, required: true },
+    lat: { type: Number, required: true },
+    lng: { type: Number, required: true },
+    label: { type: String },
+  },
+  isDeliveryTracking: { type: Boolean, default: false },
+  courierLocation: {
+    lat: { type: Number },
+    lng: { type: Number },
+    updatedAt: { type: Date },
+  },
 }, {
   timestamps: true
 })

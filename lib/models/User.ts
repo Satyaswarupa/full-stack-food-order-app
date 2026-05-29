@@ -5,6 +5,8 @@ export interface IAddress {
   label: string
   mobile: string
   fullAddress: string
+  lat?: number
+  lng?: number
   isDefault: boolean
 }
 
@@ -22,6 +24,8 @@ const AddressSchema = new Schema<IAddress>({
   label: { type: String, default: 'Home' },
   mobile: { type: String, required: true },
   fullAddress: { type: String, required: true },
+  lat: { type: Number },
+  lng: { type: Number },
   isDefault: { type: Boolean, default: false }
 })
 

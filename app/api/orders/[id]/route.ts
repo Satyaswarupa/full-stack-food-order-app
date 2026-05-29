@@ -22,11 +22,14 @@ export async function PUT(
 
     await connectDB()
 
-    const order = await Order.findByIdAndUpdate(
-      id,
-      { status },
-      { new: true }
-    )
+    const update: Record<string, unknown> = { $set: { status } }
+
+    if (status === 'delivered' || status === 'cancelled') {
+      update.$set = { status, isDeliveryTracking: false }
+      update.$unset = { courierLocation: 1 }
+    }
+
+    const order = await Order.findByIdAndUpdate(id, update, { new: true })
 
     if (!order) {
       return NextResponse.json(

@@ -15,8 +15,10 @@ import {
 } from '@/components/ui/select'
 import { Loader, PageLoader } from '@/components/loader'
 import { emitOrderUpdate } from '@/contexts/socket-context'
-import { Package, Phone, MapPin, Clock, RefreshCw } from 'lucide-react'
+import { Package, Phone, MapPin, Clock, RefreshCw, Navigation2 } from 'lucide-react'
+import { formatDistance } from '@/lib/delivery'
 import { formatDistanceToNow } from 'date-fns'
+import { OrderDeliveryPanel } from '@/components/admin/order-delivery-panel'
 
 interface OrderItem {
   itemId: string
@@ -33,11 +35,17 @@ interface Order {
   userEmail: string
   items: OrderItem[]
   total: number
+  deliveryFee?: number
+  distanceMeters?: number
   status: 'pending' | 'confirmed' | 'preparing' | 'ready' | 'delivered' | 'cancelled'
   deliveryAddress: {
     mobile: string
     fullAddress: string
+    lat?: number
+    lng?: number
   }
+  isDeliveryTracking?: boolean
+  courierLocation?: { lat: number; lng: number; updatedAt?: string }
   createdAt: string
 }
 
@@ -54,7 +62,10 @@ const fetcher = (url: string) => fetch(url).then(res => res.json())
 
 export function OrdersSection() {
   const { data, isLoading, mutate } = useSWR<{ orders: Order[] }>('/api/orders', fetcher, {
-    refreshInterval: 5000 // Poll every 5 seconds for real-time updates
+    refreshInterval: (latest) => {
+      const live = latest?.orders?.some((o) => o.isDeliveryTracking) ?? false
+      return live ? 3000 : 5000
+    },
   })
   const [updatingOrders, setUpdatingOrders] = useState<Set<string>>(new Set())
   const [filter, setFilter] = useState<string>('all')
@@ -207,9 +218,19 @@ export function OrdersSection() {
                         </div>
                       ))}
                     </div>
-                    <div className="mt-3 pt-3 border-t border-border flex justify-between">
-                      <span className="font-medium text-foreground">Total</span>
-                      <span className="font-bold text-primary">₹{order.total.toFixed(2)}</span>
+                    <div className="mt-3 pt-3 border-t border-border space-y-1 text-sm">
+                      {order.deliveryFee != null && (
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Delivery</span>
+                          <span className="text-foreground">
+                            {order.deliveryFee === 0 ? 'Free' : `₹${order.deliveryFee.toFixed(2)}`}
+                          </span>
+                        </div>
+                      )}
+                      <div className="flex justify-between font-medium">
+                        <span className="text-foreground">Total</span>
+                        <span className="font-bold text-primary">₹{order.total.toFixed(2)}</span>
+                      </div>
                     </div>
                   </div>
                   <div className="space-y-3">
@@ -223,7 +244,29 @@ export function OrdersSection() {
                         <MapPin className="h-4 w-4 text-muted-foreground mt-0.5" />
                         <span className="text-foreground">{order.deliveryAddress.fullAddress}</span>
                       </div>
+                      {order.distanceMeters != null && (
+                        <div className="flex items-start gap-2">
+                          <Navigation2 className="h-4 w-4 text-muted-foreground mt-0.5" />
+                          <span className="text-foreground">
+                            {formatDistance(order.distanceMeters)} from shop
+                          </span>
+                        </div>
+                      )}
                     </div>
+                    {order.deliveryAddress.lat != null &&
+                      order.deliveryAddress.lng != null && (
+                        <OrderDeliveryPanel
+                          orderId={order._id}
+                          orderStatus={order.status}
+                          customerLocation={{
+                            lat: order.deliveryAddress.lat,
+                            lng: order.deliveryAddress.lng,
+                          }}
+                          courierLocation={order.courierLocation}
+                          isDeliveryTracking={order.isDeliveryTracking}
+                          onTrackingChange={() => mutate()}
+                        />
+                      )}
                   </div>
                 </div>
               </CardContent>
