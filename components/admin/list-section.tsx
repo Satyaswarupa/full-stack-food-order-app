@@ -18,12 +18,7 @@ import {
 } from '@/components/ui/dialog'
 import { Loader, PageLoader } from '@/components/loader'
 import { emitItemsUpdate } from '@/contexts/socket-context'
-import {
-  syncItemEnabled,
-  revalidateAllItemCaches,
-  subscribeItemsUpdates,
-  normalizeItemId,
-} from '@/lib/items-sync'
+import { syncItemEnabled, subscribeItemsUpdates, normalizeItemId } from '@/lib/items-sync'
 import { Edit2, Trash2, Eye, EyeOff, Search, Package } from 'lucide-react'
 
 interface Item {
@@ -42,6 +37,7 @@ const fetcher = (url: string) =>
 export function ListSection() {
   const { data, isLoading, mutate } = useSWR<{ items: Item[] }>('/api/items?all=true', fetcher, {
     revalidateOnFocus: true,
+    keepPreviousData: true,
   })
   const [searchQuery, setSearchQuery] = useState('')
   const [editItem, setEditItem] = useState<Item | null>(null)
@@ -53,14 +49,12 @@ export function ListSection() {
     price: ''
   })
 
+  // Refresh when another tab changes items (not same-tab toggle — avoids page loader)
   useEffect(() => {
-    const refresh = () => void mutate()
-    window.addEventListener('items-update', refresh)
-    const unsub = subscribeItemsUpdates(refresh)
-    return () => {
-      window.removeEventListener('items-update', refresh)
-      unsub()
-    }
+    const unsub = subscribeItemsUpdates(() => {
+      void mutate((current) => current, { revalidate: true })
+    })
+    return unsub
   }, [mutate])
 
   const handleToggleEnabled = useCallback(async (item: Item, nextEnabled: boolean) => {
@@ -69,7 +63,7 @@ export function ListSection() {
     const itemId = normalizeItemId(item._id)
     setIsUpdating(itemId)
 
-    await syncItemEnabled(itemId, nextEnabled)
+    void syncItemEnabled(itemId, nextEnabled)
 
     try {
       const res = await fetch(`/api/items/${itemId}`, {
@@ -81,8 +75,6 @@ export function ListSection() {
       if (!res.ok) throw new Error('Failed to update item')
 
       emitItemsUpdate()
-      await revalidateAllItemCaches()
-      await mutate()
       toast.success(`Item ${nextEnabled ? 'enabled' : 'disabled'}`)
     } catch {
       await syncItemEnabled(itemId, item.isEnabled)
@@ -90,7 +82,7 @@ export function ListSection() {
     } finally {
       setIsUpdating(null)
     }
-  }, [mutate])
+  }, [])
 
   const handleEdit = (item: Item) => {
     setEditItem(item)
@@ -122,8 +114,6 @@ export function ListSection() {
       if (!res.ok) throw new Error('Failed to update item')
 
       emitItemsUpdate()
-      await revalidateAllItemCaches()
-      await mutate()
       toast.success('Item updated successfully')
       setEditItem(null)
     } catch {
@@ -155,7 +145,7 @@ export function ListSection() {
     }
   }
 
-  if (isLoading) return <PageLoader text="Loading items..." />
+  if (isLoading && !data) return <PageLoader text="Loading items..." />
 
   const items = data?.items || []
   const filteredItems = items.filter(item =>
@@ -223,11 +213,16 @@ export function ListSection() {
                 </p>
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2">
-                    <Switch
-                      checked={item.isEnabled}
-                      onCheckedChange={(checked) => handleToggleEnabled(item, checked)}
-                      disabled={isUpdating === normalizeItemId(item._id)}
-                    />
+                    <div className="relative flex items-center gap-2">
+                      <Switch
+                        checked={item.isEnabled}
+                        onCheckedChange={(checked) => handleToggleEnabled(item, checked)}
+                        disabled={isUpdating === normalizeItemId(item._id)}
+                      />
+                      {isUpdating === normalizeItemId(item._id) && (
+                        <Loader size="sm" className="absolute -right-6" />
+                      )}
+                    </div>
                     <span className="text-sm text-muted-foreground flex items-center gap-1">
                       {item.isEnabled ? (
                         <>

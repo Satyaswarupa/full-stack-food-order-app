@@ -49,12 +49,7 @@ export function SocketProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const handleOrderUpdate = (e: CustomEvent) => setLastOrderUpdate(e.detail)
     const handleNewOrder = (e: CustomEvent) => setLastNewOrder(e.detail)
-    const handleItemsUpdate = () => {
-      setLastItemsUpdate(Date.now())
-      import('@/lib/items-sync').then(({ revalidateAllItemCaches }) =>
-        revalidateAllItemCaches()
-      )
-    }
+    const handleItemsUpdate = () => setLastItemsUpdate(Date.now())
     const handleUsersUpdate = () => setLastUsersUpdate(Date.now())
 
     window.addEventListener('order-update', handleOrderUpdate as EventListener)
@@ -65,12 +60,7 @@ export function SocketProvider({ children }: { children: ReactNode }) {
     const unsubscribe = subscribeToBroadcast((type, detail) => {
       if (type === 'order-update') setLastOrderUpdate(detail)
       if (type === 'new-order') setLastNewOrder(detail)
-      if (type === 'items-update') {
-        setLastItemsUpdate(Date.now())
-        import('@/lib/items-sync').then(({ revalidateAllItemCaches }) =>
-          revalidateAllItemCaches()
-        )
-      }
+      if (type === 'items-update') setLastItemsUpdate(Date.now())
       if (type === 'users-update') setLastUsersUpdate(Date.now())
     })
 

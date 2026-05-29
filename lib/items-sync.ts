@@ -14,12 +14,16 @@ const isItemsKey = (key: unknown): key is string =>
 
 type ItemsCache = { items?: Array<{ _id: unknown; isEnabled?: boolean; [key: string]: unknown }> }
 
-/** Refetch every SWR cache that loads menu items (store + admin list). */
+/** Refetch item caches without clearing current data (avoids full-page loader). */
 export async function revalidateAllItemCaches() {
-  await globalMutate(isItemsKey, undefined, { revalidate: true })
+  await globalMutate<ItemsCache>(
+    isItemsKey,
+    (current) => current,
+    { revalidate: true }
+  )
 }
 
-/** Update all item caches immediately, then revalidate from server. */
+/** Update all item caches immediately — no revalidate (keeps admin list on screen). */
 export async function syncItemEnabled(itemId: string, isEnabled: boolean) {
   const id = normalizeItemId(itemId)
 
@@ -44,7 +48,7 @@ export async function syncItemEnabled(itemId: string, isEnabled: boolean) {
 
       return current
     },
-    { revalidate: true }
+    { revalidate: false }
   )
 }
 
@@ -59,7 +63,6 @@ function initItemsBroadcast() {
     itemsBroadcast.onmessage = (event: MessageEvent<{ type?: string }>) => {
       if (event.data?.type === 'items-update') {
         itemsListeners.forEach((fn) => fn())
-        void revalidateAllItemCaches()
       }
     }
   } catch {
@@ -86,5 +89,4 @@ export function notifyItemsUpdated() {
     // ignore
   }
 
-  void revalidateAllItemCaches()
 }

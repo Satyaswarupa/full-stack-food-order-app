@@ -26,6 +26,7 @@ export function ItemsGrid() {
     revalidateOnFocus: true,
     refreshInterval: 4000,
     dedupingInterval: 1000,
+    keepPreviousData: true,
   })
   const [searchQuery, setSearchQuery] = useState('')
 
@@ -44,7 +45,7 @@ export function ItemsGrid() {
     }
   }, [mutate])
 
-  if (isLoading) return <PageLoader text="Loading menu..." />
+  if (isLoading && !data) return <PageLoader text="Loading menu..." />
 
   const items = data?.items || []
   const filteredItems = items.filter(
