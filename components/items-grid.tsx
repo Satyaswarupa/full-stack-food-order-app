@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input'
 import { PageLoader } from '@/components/loader'
 import { ItemCard } from '@/components/item-card'
 import { Search, ShoppingBag } from 'lucide-react'
+import { subscribeToBroadcast, useSocket } from '@/contexts/socket-context'
 
 interface Item {
   _id: string
@@ -20,18 +21,27 @@ interface Item {
 const fetcher = (url: string) => fetch(url).then(res => res.json())
 
 export function ItemsGrid() {
-  const { data, isLoading, mutate } = useSWR<{ items: Item[] }>('/api/items', fetcher)
+  const { data, isLoading, mutate } = useSWR<{ items: Item[] }>('/api/items', fetcher, {
+    revalidateOnFocus: true,
+  })
+  const { lastItemsUpdate } = useSocket()
   const [searchQuery, setSearchQuery] = useState('')
 
-  // Listen for items update events (real-time)
   useEffect(() => {
-    const handleItemsUpdate = () => {
-      mutate()
+    const refresh = () => mutate()
+    window.addEventListener('items-update', refresh)
+    const unsub = subscribeToBroadcast((type) => {
+      if (type === 'items-update') refresh()
+    })
+    return () => {
+      window.removeEventListener('items-update', refresh)
+      unsub()
     }
-
-    window.addEventListener('items-update', handleItemsUpdate)
-    return () => window.removeEventListener('items-update', handleItemsUpdate)
   }, [mutate])
+
+  useEffect(() => {
+    mutate()
+  }, [lastItemsUpdate, mutate])
 
   if (isLoading) return <PageLoader text="Loading menu..." />
 

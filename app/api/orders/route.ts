@@ -4,11 +4,8 @@ import Order from '@/lib/models/Order'
 import User from '@/lib/models/User'
 import { getCurrentUser } from '@/lib/auth'
 import { getOrCreateShopSettings } from '@/lib/models/ShopSettings'
-import {
-  getDeliveryFee,
-  haversineDistanceMeters,
-  isDeliverable,
-} from '@/lib/delivery'
+import { getDeliveryFee, isDeliverable } from '@/lib/delivery'
+import { fetchDrivingDistanceMeters } from '@/lib/routing'
 
 export async function GET() {
   try {
@@ -70,7 +67,10 @@ export async function POST(request: Request) {
     await connectDB()
 
     const shop = await getOrCreateShopSettings()
-    const distanceMeters = haversineDistanceMeters(shop.lat, shop.lng, lat, lng)
+    const distanceMeters = await fetchDrivingDistanceMeters(
+      { lat: shop.lat, lng: shop.lng },
+      { lat, lng }
+    )
 
     if (!isDeliverable(distanceMeters)) {
       return NextResponse.json(

@@ -47,7 +47,6 @@ export function SocketProvider({ children }: { children: ReactNode }) {
 
   // Expose methods to trigger updates manually
   useEffect(() => {
-    // Listen for custom events to trigger updates
     const handleOrderUpdate = (e: CustomEvent) => setLastOrderUpdate(e.detail)
     const handleNewOrder = (e: CustomEvent) => setLastNewOrder(e.detail)
     const handleItemsUpdate = () => setLastItemsUpdate(Date.now())
@@ -58,11 +57,19 @@ export function SocketProvider({ children }: { children: ReactNode }) {
     window.addEventListener('items-update', handleItemsUpdate)
     window.addEventListener('users-update', handleUsersUpdate)
 
+    const unsubscribe = subscribeToBroadcast((type, detail) => {
+      if (type === 'order-update') setLastOrderUpdate(detail)
+      if (type === 'new-order') setLastNewOrder(detail)
+      if (type === 'items-update') setLastItemsUpdate(Date.now())
+      if (type === 'users-update') setLastUsersUpdate(Date.now())
+    })
+
     return () => {
       window.removeEventListener('order-update', handleOrderUpdate as EventListener)
       window.removeEventListener('new-order', handleNewOrder as EventListener)
       window.removeEventListener('items-update', handleItemsUpdate)
       window.removeEventListener('users-update', handleUsersUpdate)
+      unsubscribe()
     }
   }, [])
 
@@ -87,19 +94,56 @@ export function useSocket() {
   return context
 }
 
-// Helper functions to emit events
+const BROADCAST_CHANNEL = 'food-order-app'
+
+function broadcast(type: string, detail?: unknown) {
+  if (typeof window === 'undefined') return
+  try {
+    const channel = new BroadcastChannel(BROADCAST_CHANNEL)
+    channel.postMessage({ type, detail })
+    channel.close()
+  } catch {
+    // BroadcastChannel not supported
+  }
+}
+
+// Helper functions to emit events (same tab + other tabs)
 export function emitOrderUpdate(order: unknown) {
   window.dispatchEvent(new CustomEvent('order-update', { detail: order }))
+  broadcast('order-update', order)
 }
 
 export function emitNewOrder(order: unknown) {
   window.dispatchEvent(new CustomEvent('new-order', { detail: order }))
+  broadcast('new-order', order)
 }
 
 export function emitItemsUpdate() {
   window.dispatchEvent(new CustomEvent('items-update'))
+  broadcast('items-update')
 }
 
 export function emitUsersUpdate() {
   window.dispatchEvent(new CustomEvent('users-update'))
+  broadcast('users-update')
+}
+
+export function subscribeToBroadcast(
+  handler: (type: string, detail?: unknown) => void
+): () => void {
+  if (typeof window === 'undefined') return () => {}
+
+  try {
+    const channel = new BroadcastChannel(BROADCAST_CHANNEL)
+    const onMessage = (event: MessageEvent<{ type: string; detail?: unknown }>) => {
+      handler(event.data.type, event.data.detail)
+    }
+    channel.addEventListener('message', onMessage)
+    return () => {
+      channel.removeEventListener('message', onMessage)
+      channel.close()
+    }
+  } catch {
+    return () => {}
+  }
 }

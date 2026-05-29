@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useMemo, useCallback } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import dynamic from 'next/dynamic'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
@@ -18,13 +18,7 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Loader, OverlayLoader } from '@/components/loader'
 import { ArrowLeft, MapPin, Phone, Check, Plus, Navigation2 } from 'lucide-react'
-import {
-  DELIVERY_FEE_TIERS,
-  formatDistance,
-  getDeliveryFee,
-  haversineDistanceMeters,
-  isDeliverable,
-} from '@/lib/delivery'
+import { DELIVERY_FEE_TIERS, formatDistance, isDeliverable } from '@/lib/delivery'
 import { reverseGeocode } from '@/lib/geocode'
 import type { MapLocation } from '@/components/map/location-picker'
 
@@ -58,6 +52,9 @@ export function CheckoutView() {
   const [label, setLabel] = useState('Home')
   const [saveAddress, setSaveAddress] = useState(true)
   const [deliveryLocation, setDeliveryLocation] = useState<MapLocation | null>(null)
+  const [distanceMeters, setDistanceMeters] = useState<number | null>(null)
+  const [deliveryFee, setDeliveryFee] = useState<number | null>(null)
+  const [distanceLoading, setDistanceLoading] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [geocoding, setGeocoding] = useState(false)
 
@@ -66,22 +63,42 @@ export function CheckoutView() {
     ? { lat: shopData.shop.lat, lng: shopData.shop.lng }
     : null
 
-  const distanceMeters = useMemo(() => {
-    if (!shopLocation || !deliveryLocation) return null
-    return haversineDistanceMeters(
-      shopLocation.lat,
-      shopLocation.lng,
-      deliveryLocation.lat,
-      deliveryLocation.lng
-    )
-  }, [shopLocation, deliveryLocation])
-
-  const deliveryFee = useMemo(() => {
-    if (distanceMeters === null) return null
-    return getDeliveryFee(distanceMeters)
-  }, [distanceMeters])
-
   const orderTotal = total + (deliveryFee ?? 0)
+
+  useEffect(() => {
+    if (!deliveryLocation) {
+      setDistanceMeters(null)
+      setDeliveryFee(null)
+      return
+    }
+
+    const controller = new AbortController()
+    const timer = setTimeout(async () => {
+      setDistanceLoading(true)
+      try {
+        const res = await fetch(
+          `/api/delivery/quote?lat=${deliveryLocation.lat}&lng=${deliveryLocation.lng}`,
+          { signal: controller.signal }
+        )
+        if (!res.ok) throw new Error('Failed to get delivery quote')
+        const quote = await res.json()
+        setDistanceMeters(quote.distanceMeters)
+        setDeliveryFee(quote.deliveryFee)
+      } catch (err) {
+        if ((err as Error).name !== 'AbortError') {
+          setDistanceMeters(null)
+          setDeliveryFee(null)
+        }
+      } finally {
+        setDistanceLoading(false)
+      }
+    }, 400)
+
+    return () => {
+      clearTimeout(timer)
+      controller.abort()
+    }
+  }, [deliveryLocation?.lat, deliveryLocation?.lng])
 
   useEffect(() => {
     if (savedAddresses.length > 0) {
@@ -270,7 +287,10 @@ export function CheckoutView() {
             <Navigation2 className="h-4 w-4" />
             Distance from shop
           </span>
-          <span className="font-medium text-foreground">{formatDistance(distanceMeters)}</span>
+          <span className="font-medium text-foreground">
+            {distanceLoading ? 'Calculating…' : formatDistance(distanceMeters)}
+            {!distanceLoading && ' (driving)'}
+          </span>
         </div>
         <div className="flex flex-wrap justify-between gap-2 mt-2">
           <span className="text-muted-foreground">Delivery charge</span>
@@ -284,7 +304,9 @@ export function CheckoutView() {
         </div>
       </div>
     ) : (
-      <p className="text-sm text-muted-foreground">Pick a location on the map to see distance and fee.</p>
+      <p className="text-sm text-muted-foreground">
+        Pick a location on the map to see driving distance and fee (same as road distance on Google Maps).
+      </p>
     )
 
   return (
@@ -466,6 +488,7 @@ export function CheckoutView() {
                   size="lg"
                   disabled={
                     isLoading ||
+                    distanceLoading ||
                     !deliveryLocation ||
                     deliveryFee === null ||
                     deliveryFee < 0 ||
@@ -532,7 +555,7 @@ export function CheckoutView() {
                 </div>
                 {distanceMeters !== null && (
                   <p className="text-xs text-muted-foreground">
-                    {formatDistance(distanceMeters)} from shop
+                    {formatDistance(distanceMeters)} driving distance from shop
                   </p>
                 )}
                 <div className="flex justify-between text-lg font-bold pt-2 border-t border-border">

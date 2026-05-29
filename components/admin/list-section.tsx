@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import useSWR from 'swr'
 import { toast } from 'sonner'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -17,7 +17,8 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog'
 import { Loader, PageLoader } from '@/components/loader'
-import { emitItemsUpdate } from '@/contexts/socket-context'
+import { emitItemsUpdate, subscribeToBroadcast, useSocket } from '@/contexts/socket-context'
+import { patchItemInCache } from '@/lib/items-cache'
 import { Edit2, Trash2, Eye, EyeOff, Search, Package } from 'lucide-react'
 
 interface Item {
@@ -33,7 +34,10 @@ interface Item {
 const fetcher = (url: string) => fetch(url).then(res => res.json())
 
 export function ListSection() {
-  const { data, isLoading, mutate } = useSWR<{ items: Item[] }>('/api/items?all=true', fetcher)
+  const { data, isLoading, mutate } = useSWR<{ items: Item[] }>('/api/items?all=true', fetcher, {
+    revalidateOnFocus: true,
+  })
+  const { lastItemsUpdate } = useSocket()
   const [searchQuery, setSearchQuery] = useState('')
   const [editItem, setEditItem] = useState<Item | null>(null)
   const [isUpdating, setIsUpdating] = useState<string | null>(null)
@@ -44,22 +48,43 @@ export function ListSection() {
     price: ''
   })
 
+  useEffect(() => {
+    const refresh = () => mutate()
+    window.addEventListener('items-update', refresh)
+    const unsub = subscribeToBroadcast((type) => {
+      if (type === 'items-update') refresh()
+    })
+    return () => {
+      window.removeEventListener('items-update', refresh)
+      unsub()
+    }
+  }, [mutate])
+
+  useEffect(() => {
+    mutate()
+  }, [lastItemsUpdate, mutate])
+
   const handleToggleEnabled = useCallback(async (item: Item) => {
+    const nextEnabled = !item.isEnabled
     setIsUpdating(item._id)
-    
+
+    await patchItemInCache(mutate, item._id, { isEnabled: nextEnabled })
+
     try {
       const res = await fetch(`/api/items/${item._id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ isEnabled: !item.isEnabled })
+        body: JSON.stringify({ isEnabled: nextEnabled }),
       })
 
       if (!res.ok) throw new Error('Failed to update item')
 
+      const { item: updated } = await res.json()
+      await patchItemInCache(mutate, item._id, updated)
       emitItemsUpdate()
-      mutate()
-      toast.success(`Item ${!item.isEnabled ? 'enabled' : 'disabled'}`)
+      toast.success(`Item ${nextEnabled ? 'enabled' : 'disabled'}`)
     } catch {
+      await patchItemInCache(mutate, item._id, { isEnabled: item.isEnabled })
       toast.error('Failed to update item')
     } finally {
       setIsUpdating(null)
@@ -95,8 +120,9 @@ export function ListSection() {
 
       if (!res.ok) throw new Error('Failed to update item')
 
+      const { item: updated } = await res.json()
+      await patchItemInCache(mutate, editItem._id, updated)
       emitItemsUpdate()
-      mutate()
       toast.success('Item updated successfully')
       setEditItem(null)
     } catch {
@@ -119,7 +145,7 @@ export function ListSection() {
       if (!res.ok) throw new Error('Failed to delete item')
 
       emitItemsUpdate()
-      mutate()
+      await mutate()
       toast.success('Item deleted successfully')
     } catch {
       toast.error('Failed to delete item')
