@@ -56,14 +56,14 @@ export function ItemsGrid() {
   )
 
   return (
-    <div className="space-y-6">
-      <div className="relative max-w-md">
+    <div className="space-y-4">
+      <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input
           placeholder="Search menu items..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="pl-10 h-11"
+          className="pl-10 h-12 rounded-xl bg-input border-border/60"
         />
       </div>
 
@@ -82,7 +82,7 @@ export function ItemsGrid() {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
+        <div className="flex flex-col gap-3">
           {filteredItems.map((item) => (
             <ItemCard key={item._id} item={item} />
           ))}

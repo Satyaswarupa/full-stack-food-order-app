@@ -3,7 +3,7 @@
 import { useState, useCallback, useEffect } from 'react'
 import useSWR from 'swr'
 import { toast } from 'sonner'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -182,48 +182,59 @@ export function ListSection() {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="rounded-lg border border-border bg-card divide-y divide-border overflow-hidden">
           {filteredItems.map((item) => (
-            <Card key={item._id} className={`overflow-hidden transition-opacity ${!item.isEnabled ? 'opacity-60' : ''}`}>
-              <div className="aspect-video relative">
-                <img
-                  src={item.imageUrl}
-                  alt={item.name}
-                  className="object-cover w-full h-full"
-                />
-                {!item.isEnabled && (
-                  <div className="absolute inset-0 bg-background/60 flex items-center justify-center">
-                    <span className="text-sm font-medium text-foreground bg-card px-3 py-1 rounded-full">
-                      Disabled
-                    </span>
-                  </div>
-                )}
-              </div>
-              <CardHeader className="pb-2">
-                <div className="flex items-start justify-between gap-2">
-                  <CardTitle className="text-base line-clamp-1">{item.name}</CardTitle>
-                  <span className="text-lg font-bold text-primary shrink-0">
-                    ₹{item.price.toFixed(2)}
-                  </span>
+            <div
+              key={item._id}
+              className={`flex flex-col sm:flex-row sm:items-center gap-4 p-4 transition-opacity ${
+                !item.isEnabled ? 'opacity-60 bg-muted/30' : ''
+              }`}
+            >
+              <div className="flex items-center gap-4 flex-1 min-w-0">
+                <div className="relative h-20 w-20 shrink-0 rounded-lg overflow-hidden bg-muted">
+                  <img
+                    src={item.imageUrl}
+                    alt={item.name}
+                    className="h-full w-full object-cover"
+                    onError={(e) => {
+                      ;(e.target as HTMLImageElement).src =
+                        'https://placehold.co/80x80?text=No+Image'
+                    }}
+                  />
+                  {!item.isEnabled && (
+                    <div className="absolute inset-0 bg-background/70 flex items-center justify-center">
+                      <span className="text-[10px] font-medium text-foreground bg-card px-2 py-0.5 rounded">
+                        Off
+                      </span>
+                    </div>
+                  )}
                 </div>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground line-clamp-2 mb-4">
-                  {item.description}
-                </p>
-                <div className="flex items-center justify-between gap-2">
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-semibold text-foreground truncate">{item.name}</h3>
+                  <p className="text-sm text-muted-foreground line-clamp-2 mt-0.5">
+                    {item.description}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between sm:justify-end gap-4 sm:gap-6 shrink-0 w-full sm:w-auto">
+                <span className="text-lg font-bold text-primary whitespace-nowrap">
+                  ₹{item.price.toFixed(2)}
+                </span>
+
+                <div className="flex items-center gap-3">
                   <div className="flex items-center gap-2">
-                    <div className="relative flex items-center gap-2">
+                    <div className="relative flex items-center">
                       <Switch
                         checked={item.isEnabled}
                         onCheckedChange={(checked) => handleToggleEnabled(item, checked)}
                         disabled={isUpdating === normalizeItemId(item._id)}
                       />
                       {isUpdating === normalizeItemId(item._id) && (
-                        <Loader size="sm" className="absolute -right-6" />
+                        <Loader size="sm" className="ml-2" />
                       )}
                     </div>
-                    <span className="text-sm text-muted-foreground flex items-center gap-1">
+                    <span className="text-xs text-muted-foreground hidden md:flex items-center gap-1">
                       {item.isEnabled ? (
                         <>
                           <Eye className="h-3 w-3" /> Visible
@@ -235,32 +246,30 @@ export function ListSection() {
                       )}
                     </span>
                   </div>
-                  <div className="flex items-center gap-1">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleEdit(item)}
-                      disabled={isUpdating === normalizeItemId(item._id)}
-                    >
-                      <Edit2 className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="text-destructive hover:text-destructive"
-                      onClick={() => handleDelete(item._id)}
-                      disabled={isUpdating === normalizeItemId(item._id)}
-                    >
-                      {isUpdating === normalizeItemId(item._id) ? (
-                        <Loader size="sm" />
-                      ) : (
-                        <Trash2 className="h-4 w-4" />
-                      )}
-                    </Button>
-                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => handleEdit(item)}
+                    disabled={isUpdating === normalizeItemId(item._id)}
+                  >
+                    <Edit2 className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="text-destructive hover:text-destructive"
+                    onClick={() => handleDelete(item._id)}
+                    disabled={isUpdating === normalizeItemId(item._id)}
+                  >
+                    {isUpdating === normalizeItemId(item._id) ? (
+                      <Loader size="sm" />
+                    ) : (
+                      <Trash2 className="h-4 w-4" />
+                    )}
+                  </Button>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           ))}
         </div>
       )}

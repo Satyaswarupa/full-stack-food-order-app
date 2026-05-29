@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation'
 import { getCurrentUser } from '@/lib/auth'
-import { Header } from '@/components/header'
+import { UserLayout } from '@/components/user-layout'
 import { CheckoutView } from '@/components/checkout-view'
 
 export default async function CheckoutPage() {
@@ -15,9 +15,8 @@ export default async function CheckoutPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <Header />
+    <UserLayout>
       <CheckoutView />
-    </div>
+    </UserLayout>
   )
 }

@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation'
 import { getCurrentUser } from '@/lib/auth'
-import { Header } from '@/components/header'
+import { UserLayout } from '@/components/user-layout'
 import { CartView } from '@/components/cart-view'
 
 export default async function CartPage() {
@@ -15,9 +15,8 @@ export default async function CartPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <Header />
+    <UserLayout>
       <CartView />
-    </div>
+    </UserLayout>
   )
 }

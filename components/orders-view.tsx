@@ -70,7 +70,7 @@ export function OrdersView() {
 
   if (orders.length === 0) {
     return (
-      <div className="container mx-auto px-4 py-12">
+      <div className="mobile-container py-12">
         <Card className="max-w-lg mx-auto">
           <CardContent className="flex flex-col items-center justify-center py-16">
             <div className="flex h-20 w-20 items-center justify-center rounded-full bg-muted mb-6">
@@ -93,7 +93,7 @@ export function OrdersView() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="mobile-container py-8">
       <div className="mb-6 flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-foreground">My Orders</h1>

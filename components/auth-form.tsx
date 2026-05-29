@@ -54,11 +54,12 @@ export function AuthForm() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background p-4">
-      <Card className="w-full max-w-md shadow-xl border-0 bg-card/95 backdrop-blur">
+    <div className="flex min-h-screen items-center justify-center bg-background p-4 relative overflow-hidden">
+      <div className="absolute inset-0 bg-gradient-to-b from-primary/10 via-background to-background" />
+      <Card className="relative w-full max-w-md glass-panel shadow-2xl border-border/50 rounded-2xl">
         <CardHeader className="space-y-2 text-center pb-2">
-          <div className="mx-auto mb-2 flex h-14 w-14 items-center justify-center rounded-full bg-primary/10">
-            <ShoppingBag className="h-7 w-7 text-primary" />
+          <div className="mx-auto mb-2 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary shadow-lg shadow-primary/30">
+            <ShoppingBag className="h-7 w-7 text-primary-foreground" />
           </div>
           <CardTitle className="text-2xl font-bold text-foreground">
             {isLogin ? 'Welcome Back' : 'Create Account'}
@@ -81,7 +82,7 @@ export function AuthForm() {
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   required={!isLogin}
-                  className="h-11 bg-background border-input"
+                  className="h-12 rounded-xl bg-input border-border/60"
                 />
               </div>
             )}
@@ -94,7 +95,7 @@ export function AuthForm() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="h-11 bg-background border-input"
+                className="h-12 rounded-xl bg-input border-border/60"
               />
             </div>
             <div className="space-y-2">
@@ -108,7 +109,7 @@ export function AuthForm() {
                   onChange={(e) => setPassword(e.target.value)}
                   required
                   minLength={6}
-                  className="h-11 pr-10 bg-background border-input"
+                  className="h-12 pr-10 rounded-xl bg-input border-border/60"
                 />
                 <button
                   type="button"
@@ -121,7 +122,7 @@ export function AuthForm() {
             </div>
             <Button 
               type="submit" 
-              className="w-full h-11 text-base font-semibold mt-6" 
+              className="w-full h-12 text-base font-semibold mt-6 rounded-xl shadow-lg shadow-primary/25" 
               disabled={isLoading}
             >
               {isLoading ? (

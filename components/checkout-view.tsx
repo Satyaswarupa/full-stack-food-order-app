@@ -139,7 +139,7 @@ export function CheckoutView() {
 
   if (shopData?.shop && !shopData.shop.isConfigured) {
     return (
-      <div className="container mx-auto px-4 py-12">
+      <div className="mobile-container py-12">
         <Card className="max-w-lg mx-auto">
           <CardContent className="flex flex-col items-center justify-center py-16 text-center">
             <MapPin className="h-12 w-12 text-muted-foreground mb-4" />
@@ -158,7 +158,7 @@ export function CheckoutView() {
 
   if (items.length === 0) {
     return (
-      <div className="container mx-auto px-4 py-12">
+      <div className="mobile-container py-12">
         <Card className="max-w-lg mx-auto">
           <CardContent className="flex flex-col items-center justify-center py-16">
             <h2 className="text-2xl font-bold text-foreground mb-2">No items in cart</h2>
@@ -310,7 +310,7 @@ export function CheckoutView() {
     )
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="mobile-container py-8">
       {isLoading && <OverlayLoader text="Placing your order..." />}
 
       <div className="mb-6">

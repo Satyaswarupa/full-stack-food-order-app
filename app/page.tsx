@@ -1,26 +1,26 @@
-import { Header } from '@/components/header'
+import { UserLayout } from '@/components/user-layout'
 import { HeroSection } from '@/components/hero-section'
 import { ItemsGrid } from '@/components/items-grid'
 
 export default function HomePage() {
   return (
-    <div className="min-h-screen bg-background">
-      <Header />
+    <UserLayout>
       <HeroSection />
-      <main className="container mx-auto px-4 py-8" id="menu">
-        <div className="mb-8">
-          <h2 className="text-3xl font-bold text-foreground mb-2">Our Menu</h2>
-          <p className="text-muted-foreground">
-            Discover our delicious selection of items
+      <main className="mobile-container py-6 md:py-8" id="menu">
+        <div className="mb-5">
+          <span className="label-chip bg-secondary text-muted-foreground mb-2">Menu</span>
+          <h2 className="text-2xl font-bold text-foreground">Order now</h2>
+          <p className="text-sm text-muted-foreground mt-1">
+            Tap + to add items to your cart
           </p>
         </div>
         <ItemsGrid />
       </main>
-      <footer className="border-t border-border py-8 mt-12">
-        <div className="container mx-auto px-4 text-center text-muted-foreground text-sm">
-          <p>OrderFlow - Food Ordering Made Simple</p>
+      <footer className="border-t border-border/40 py-6 mt-4 mb-2">
+        <div className="mobile-container text-center text-muted-foreground text-xs">
+          <p>OrderFlow · Food ordering made simple</p>
         </div>
       </footer>
-    </div>
+    </UserLayout>
   )
 }

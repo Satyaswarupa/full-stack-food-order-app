@@ -5,7 +5,15 @@ import { Toaster } from 'sonner'
 import { AuthProvider } from '@/contexts/auth-context'
 import { CartProvider } from '@/contexts/cart-context'
 import { SocketProvider } from '@/contexts/socket-context'
+import { ThemeProvider } from '@/components/theme-provider'
 import './globals.css'
+
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 5,
+  themeColor: '#09090b',
+}
 
 const roboto = Roboto({ 
   weight: ['300', '400', '500', '700'],
@@ -41,16 +49,18 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" className="bg-background">
-      <body className={`${roboto.variable} font-sans antialiased`}>
-        <AuthProvider>
-          <CartProvider>
-            <SocketProvider>
-              {children}
-              <Toaster richColors position="top-right" />
-            </SocketProvider>
-          </CartProvider>
-        </AuthProvider>
+    <html lang="en" className="dark" suppressHydrationWarning>
+      <body className={`${roboto.variable} font-sans antialiased min-h-screen`}>
+        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false} forcedTheme="dark">
+          <AuthProvider>
+            <CartProvider>
+              <SocketProvider>
+                {children}
+                <Toaster richColors position="top-center" className="md:!top-right" />
+              </SocketProvider>
+            </CartProvider>
+          </AuthProvider>
+        </ThemeProvider>
         {process.env.NODE_ENV === 'production' && <Analytics />}
       </body>
     </html>

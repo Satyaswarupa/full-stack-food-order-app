@@ -3,51 +3,90 @@
 import Link from 'next/link'
 import { useAuth } from '@/contexts/auth-context'
 import { Button } from '@/components/ui/button'
-import { ShoppingBag, ArrowRight, Clock, Truck, Star } from 'lucide-react'
+import {
+  ShoppingBag,
+  ArrowRight,
+  Clock,
+  Truck,
+  MapPin,
+  UtensilsCrossed,
+  Sparkles,
+} from 'lucide-react'
 
 export function HeroSection() {
   const { user } = useAuth()
 
   return (
-    <section className="relative overflow-hidden bg-gradient-to-br from-primary/5 via-background to-accent/5 py-12 md:py-20">
-      {/* Background Pattern */}
-      <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiMyMjI4M0YiIGZpbGwtb3BhY2l0eT0iMC4wMyI+PGNpcmNsZSBjeD0iMzAiIGN5PSIzMCIgcj0iMiIvPjwvZz48L2c+PC9zdmc+')] opacity-50" />
-      
-      <div className="container mx-auto px-4 relative">
-        <div className="max-w-3xl mx-auto text-center">
-          <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-1.5 text-sm font-medium text-primary mb-6">
-            <Star className="h-4 w-4 fill-current" />
-            Fresh & Delicious
-          </div>
-          
-          <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-foreground mb-6 text-balance leading-tight">
-            Order Your Favorite Food{' '}
-            <span className="text-primary">Delivered Fast</span>
+    <section className="relative w-full overflow-hidden border-b border-border/40">
+      <div className="absolute inset-0 bg-gradient-to-b from-primary/12 via-background to-background" />
+      <div className="absolute top-8 right-[10%] h-40 w-40 rounded-full bg-primary/25 blur-3xl animate-hero-glow" />
+      <div className="absolute bottom-0 left-[5%] h-32 w-32 rounded-full bg-accent/20 blur-3xl animate-hero-glow hero-delay-2" />
+
+      <div className="app-shell relative py-10 md:py-14">
+        {/* Floating decorative icons */}
+        <div
+          className="pointer-events-none absolute right-2 top-2 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 border border-primary/20 animate-hero-float"
+          aria-hidden
+        >
+          <UtensilsCrossed className="h-7 w-7 text-primary/70" />
+        </div>
+        <div
+          className="pointer-events-none absolute right-16 top-20 flex h-11 w-11 items-center justify-center rounded-xl bg-accent/10 border border-accent/20 animate-hero-float-delayed"
+          aria-hidden
+        >
+          <Truck className="h-5 w-5 text-accent/80" />
+        </div>
+        <div
+          className="pointer-events-none absolute left-0 top-6 flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 animate-hero-float-delayed hero-delay-1"
+          aria-hidden
+        >
+          <Sparkles className="h-5 w-5 text-primary/60" />
+        </div>
+
+        <div className="relative z-10 w-full max-w-lg">
+          <span className="label-chip bg-primary/15 text-primary mb-4 animate-hero-fade-up inline-flex">
+            <MapPin className="h-3 w-3" />
+            Delivering near you
+          </span>
+
+          <h1 className="text-3xl md:text-4xl font-bold text-foreground leading-[1.15] text-balance animate-hero-fade-up hero-delay-1">
+            Order food{' '}
+            <span className="hero-text-shimmer">delivered fast</span>
           </h1>
-          
-          <p className="text-lg md:text-xl text-muted-foreground mb-8 max-w-2xl mx-auto text-pretty">
-            Browse our delicious menu, add items to your cart, and get your order delivered right to your doorstep with real-time tracking.
+
+          <p className="text-sm md:text-base text-muted-foreground mt-3 text-pretty animate-hero-fade-up hero-delay-2">
+            Browse the menu, track your rider live, and pay a fair fee based on distance.
           </p>
 
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-12">
+          <div className="flex flex-col sm:flex-row flex-wrap gap-3 mt-6 animate-hero-fade-up hero-delay-3">
             {!user ? (
               <>
-                <Link href="/login">
-                  <Button size="lg" className="w-full sm:w-auto gap-2 text-base px-8">
+                <Link href="/login" className="w-full sm:w-auto">
+                  <Button
+                    size="lg"
+                    className="w-full sm:w-auto rounded-xl gap-2 shadow-lg shadow-primary/25 h-12"
+                  >
                     Get Started
                     <ArrowRight className="h-4 w-4" />
                   </Button>
                 </Link>
-                <a href="#menu">
-                  <Button size="lg" variant="outline" className="w-full sm:w-auto gap-2 text-base px-8">
+                <a href="#menu" className="w-full sm:w-auto">
+                  <Button
+                    size="lg"
+                    variant="secondary"
+                    className="w-full sm:w-auto rounded-xl gap-2 h-12"
+                  >
                     <ShoppingBag className="h-4 w-4" />
                     Browse Menu
                   </Button>
                 </a>
               </>
             ) : (
-              <a href="#menu">
-                <Button size="lg" className="gap-2 text-base px-8">
+              <a href="#menu" className="w-full sm:w-auto">
+                <Button
+                  size="lg"
+                  className="w-full sm:w-auto rounded-xl gap-2 shadow-lg shadow-primary/25 h-12"
+                >
                   <ShoppingBag className="h-4 w-4" />
                   Start Ordering
                 </Button>
@@ -55,29 +94,24 @@ export function HeroSection() {
             )}
           </div>
 
-          {/* Features */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 max-w-2xl mx-auto">
-            <div className="flex flex-col items-center gap-2 p-4 rounded-xl bg-card/50 backdrop-blur border border-border/50">
-              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
-                <Clock className="h-6 w-6 text-primary" />
+          <div className="grid grid-cols-3 gap-2 sm:gap-3 mt-8 w-full animate-hero-fade-up hero-delay-4">
+            {[
+              { icon: Clock, label: 'Quick', sub: '30–45 min' },
+              { icon: Truck, label: 'Live', sub: 'GPS track' },
+              { icon: MapPin, label: 'Fair', sub: 'Km pricing' },
+            ].map(({ icon: Icon, label, sub }, i) => (
+              <div
+                key={label}
+                className="flex flex-col items-center justify-center gap-1 rounded-xl glass-panel p-3 text-center min-h-[88px] transition-transform hover:scale-[1.02]"
+                style={{ animationDelay: `${0.5 + i * 0.08}s` }}
+              >
+                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/15">
+                  <Icon className="h-4 w-4 text-primary" />
+                </div>
+                <span className="text-xs font-semibold text-foreground leading-none">{label}</span>
+                <span className="text-[10px] text-muted-foreground leading-tight">{sub}</span>
               </div>
-              <span className="font-medium text-foreground">Quick Delivery</span>
-              <span className="text-sm text-muted-foreground">30-45 minutes</span>
-            </div>
-            <div className="flex flex-col items-center gap-2 p-4 rounded-xl bg-card/50 backdrop-blur border border-border/50">
-              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-accent/10">
-                <Truck className="h-6 w-6 text-accent" />
-              </div>
-              <span className="font-medium text-foreground">Live Tracking</span>
-              <span className="text-sm text-muted-foreground">Real-time updates</span>
-            </div>
-            <div className="flex flex-col items-center gap-2 p-4 rounded-xl bg-card/50 backdrop-blur border border-border/50">
-              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
-                <Star className="h-6 w-6 text-primary" />
-              </div>
-              <span className="font-medium text-foreground">Best Quality</span>
-              <span className="text-sm text-muted-foreground">Fresh ingredients</span>
-            </div>
+            ))}
           </div>
         </div>
       </div>
