@@ -18,7 +18,7 @@ export default function HomePage() {
       </main>
       <footer className="border-t border-border/40 py-6 mt-4 mb-2">
         <div className="mobile-container text-center text-muted-foreground text-xs">
-          <p>OrderFlow · Food ordering made simple</p>
+          <p>Youtube Food Corner · Food ordering made simple</p>
         </div>
       </footer>
     </UserLayout>

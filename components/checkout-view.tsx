@@ -48,6 +48,7 @@ export function CheckoutView() {
   const [selectedAddressId, setSelectedAddressId] = useState<string>('')
   const [showNewAddress, setShowNewAddress] = useState(false)
   const [mobile, setMobile] = useState('')
+  const [confirmMobile, setConfirmMobile] = useState('')
   const [fullAddress, setFullAddress] = useState('')
   const [label, setLabel] = useState('Home')
   const [saveAddress, setSaveAddress] = useState(true)
@@ -201,6 +202,10 @@ export function CheckoutView() {
     if (showNewAddress) {
       if (!mobile || !fullAddress) {
         toast.error('Please fill in all delivery details')
+        return
+      }
+      if (mobile !== confirmMobile) {
+        toast.error('Mobile numbers do not match. Please re-enter.')
         return
       }
       deliveryAddress = {
@@ -378,6 +383,7 @@ export function CheckoutView() {
                         setShowNewAddress(true)
                         setDeliveryLocation(null)
                         setMobile('')
+                        setConfirmMobile('')
                         setFullAddress('')
                       }}
                     >
@@ -394,7 +400,7 @@ export function CheckoutView() {
                         type="button"
                         variant="ghost"
                         size="sm"
-                        onClick={() => setShowNewAddress(false)}
+                        onClick={() => { setShowNewAddress(false); setConfirmMobile('') }}
                       >
                         <ArrowLeft className="h-4 w-4 mr-2" />
                         Use Saved Address
@@ -438,6 +444,36 @@ export function CheckoutView() {
                     required
                   />
                 </div>
+
+                {showNewAddress && (
+                  <div className="space-y-2">
+                    <Label htmlFor="confirm-mobile" className="flex items-center gap-2">
+                      <Phone className="h-4 w-4" />
+                      Confirm Mobile Number
+                    </Label>
+                    <Input
+                      id="confirm-mobile"
+                      type="tel"
+                      placeholder="Re-enter your mobile number"
+                      value={confirmMobile}
+                      onChange={(e) => setConfirmMobile(e.target.value)}
+                      required
+                      className={
+                        confirmMobile && mobile !== confirmMobile
+                          ? 'border-destructive focus-visible:ring-destructive'
+                          : confirmMobile && mobile === confirmMobile
+                            ? 'border-green-500 focus-visible:ring-green-500'
+                            : ''
+                      }
+                    />
+                    {confirmMobile && mobile !== confirmMobile && (
+                      <p className="text-xs text-destructive">Mobile numbers do not match</p>
+                    )}
+                    {confirmMobile && mobile === confirmMobile && (
+                      <p className="text-xs text-green-600">Mobile numbers match</p>
+                    )}
+                  </div>
+                )}
 
                 <div className="space-y-2">
                   <Label htmlFor="address" className="flex items-center gap-2">

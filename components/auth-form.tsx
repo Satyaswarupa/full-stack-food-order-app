@@ -11,6 +11,37 @@ import { Label } from '@/components/ui/label'
 import { Loader } from '@/components/loader'
 import { ShoppingBag, Eye, EyeOff } from 'lucide-react'
 
+const COMMON_DOMAINS = [
+  'gmail.com', 'yahoo.com', 'hotmail.com', 'outlook.com',
+  'icloud.com', 'live.com', 'rediffmail.com', 'ymail.com',
+]
+
+function suggestDomain(email: string): string | null {
+  const at = email.lastIndexOf('@')
+  if (at < 1) return null
+  const typed = email.slice(at + 1).toLowerCase()
+  if (!typed || COMMON_DOMAINS.includes(typed)) return null
+
+  for (const domain of COMMON_DOMAINS) {
+    if (typed === domain) return null
+    // Levenshtein distance ≤ 2
+    if (levenshtein(typed, domain) <= 2) return email.slice(0, at + 1) + domain
+  }
+  return null
+}
+
+function levenshtein(a: string, b: string): number {
+  const dp: number[][] = Array.from({ length: a.length + 1 }, (_, i) =>
+    Array.from({ length: b.length + 1 }, (_, j) => (i === 0 ? j : j === 0 ? i : 0))
+  )
+  for (let i = 1; i <= a.length; i++)
+    for (let j = 1; j <= b.length; j++)
+      dp[i][j] = a[i - 1] === b[j - 1]
+        ? dp[i - 1][j - 1]
+        : 1 + Math.min(dp[i - 1][j], dp[i][j - 1], dp[i - 1][j - 1])
+  return dp[a.length][b.length]
+}
+
 export function AuthForm() {
   const [isLogin, setIsLogin] = useState(true)
   const [email, setEmail] = useState('')
@@ -18,6 +49,7 @@ export function AuthForm() {
   const [name, setName] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  const [emailSuggestion, setEmailSuggestion] = useState<string | null>(null)
   
   const { login, signup } = useAuth()
   const router = useRouter()
@@ -93,10 +125,24 @@ export function AuthForm() {
                 type="email"
                 placeholder="you@example.com"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => { setEmail(e.target.value); setEmailSuggestion(null) }}
+                onBlur={(e) => setEmailSuggestion(suggestDomain(e.target.value))}
                 required
                 className="h-12 rounded-xl bg-input border-border/60"
               />
+              {emailSuggestion && (
+                <p className="text-xs text-yellow-600 dark:text-yellow-400">
+                  Did you mean{' '}
+                  <button
+                    type="button"
+                    className="font-semibold underline underline-offset-2 hover:text-yellow-700 dark:hover:text-yellow-300"
+                    onClick={() => { setEmail(emailSuggestion); setEmailSuggestion(null) }}
+                  >
+                    {emailSuggestion}
+                  </button>
+                  ?
+                </p>
+              )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="password" className="text-foreground">Password</Label>

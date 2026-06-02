@@ -113,6 +113,12 @@ export function OrderDeliveryPanel({
 
     setTracking(true)
 
+    fetch(`/api/orders/${orderId}/courier-location`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ tracking: true }),
+    }).then(() => onTrackingChange?.()).catch(() => {})
+
     watchIdRef.current = navigator.geolocation.watchPosition(
       (pos) => {
         const loc = { lat: pos.coords.latitude, lng: pos.coords.longitude }

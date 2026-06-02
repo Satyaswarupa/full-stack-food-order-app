@@ -22,7 +22,7 @@ const roboto = Roboto({
 })
 
 export const metadata: Metadata = {
-  title: 'OrderFlow - Food Ordering Made Simple',
+  title: 'Youtube Food Corner',
   description: 'Order delicious food with real-time tracking',
   icons: {
     icon: [

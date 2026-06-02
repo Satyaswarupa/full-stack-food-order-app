@@ -73,7 +73,7 @@ export function Header() {
           </div>
           <div className="flex min-w-0 flex-col justify-center leading-tight">
             <span className="text-base font-bold text-foreground tracking-tight truncate">
-              OrderFlow
+              Youtube Food Corner
             </span>
             <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">
               Food delivery
